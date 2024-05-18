@@ -19,7 +19,7 @@ Este es un gestor de paquetes desarrollado en Python utilizando la biblioteca Tk
 1. Clona este repositorio en tu máquina local:
 
 ```bash
-git clone https://github.com/tu-usuario/gui-pack-manager.git
+git clone https://github.com/markbus-ai/gui-pip
 ```
 2.Navega hasta el directorio del proyecto:
 ```bash
