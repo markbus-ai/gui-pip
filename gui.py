@@ -1,13 +1,19 @@
-import tkinter as tk
+from customtkinter import *
+import customtkinter
 from tkinter import messagebox, ttk
+import tkinter as tk
 import subprocess
 import requests
+
+
+set_appearance_mode("light")
 
 # Establecer el tema de colores y la fuente
 COLOR_FONDO = "#020936"
 COLOR_TEXTO = "#FFFFFF"
 COLOR_BOTONES = "#071A99"
 FUENTE_TEXTO = ("Arial", 12)
+
 
 # Función para mostrar la barra de progreso
 def barra_de_carga(parent):
@@ -27,6 +33,11 @@ def barra_de_carga(parent):
     lbl.config(bg="white", fg="black", borderwidth=2)
     lbl.pack()  # Empaquetar sin margen
 
+    # Crear y configurar el texto "Cargando..."
+    lbl = tk.Label(lbl_general, text="Cargando...")
+    lbl.config(bg="white", fg="black", borderwidth=2)
+    lbl.pack()  # Empaquetar sin margen
+
 # Función para instalar un paquete
 def instalar_paquete():
     barra_de_carga(frame_derecho)
@@ -38,12 +49,14 @@ def instalar_paquete():
         messagebox.showinfo("Instalación", f"El paquete '{paquete}' ha sido instalado.")
         actualizar_list_paquetes_instalados()
     except subprocess.CalledProcessError as e:
-        if "Requirement already satisfied" in e.stderr:
+        if "Found existing installation" in e.stderr:
+            messagebox.showerror(message=f"{paquete} ya está instalado.")
+        elif "Requirement already satisfied" in e.stderr:
             messagebox.showerror(message=f"{paquete} ya está instalado.")
         elif "No matching distribution found" in e.stderr:
             messagebox.showerror(message=f"{paquete} no fue encontrado")
         elif "Invalid requirement" in e.stderr:
-            messagebox.showerror(message=e.stderr)
+            messagebox.showerror(message=f"")
         print(e.stderr)  # Imprimir la salida de error
     lbl_general.destroy()
 
@@ -57,7 +70,7 @@ def desinstalar_paquete():
             output = output.strip()  # Eliminar espacios en blanco adicionales
             error = error.strip()
             print(output)  # Imprimir la salida estándar
-            if "Successfully uninstalled" in output:
+            if "Found existing installation":
                 messagebox.showinfo("Desinstalación", f"El paquete '{paquete}' ha sido desinstalado.")
                 actualizar_list_paquetes_instalados()
             elif "is not installed" in output:
@@ -140,9 +153,30 @@ def buscar_paquetes():
         else:
             resultado_busqueda.set("Paquete no encontrado.")
 
+# Función para actualizar las sugerencias en el Listbox
+def actualizar_sugerencias(event):
+    termino = entrada_busqueda.get()
+    sugerencias = [paquete for paquete in paquetes_predeterminados if termino.lower() in paquete.lower()]
+    listbox_sugerencias.delete(0, tk.END)
+    for sugerencia in sugerencias:
+        listbox_sugerencias.insert(tk.END, sugerencia)
+    if sugerencias:
+        listbox_sugerencias.place(relx=0.5, rely=0.3, anchor='n')
+    else:
+        listbox_sugerencias.place_forget()
+
+# Función para completar el campo de entrada con la selección del Listbox
+def completar_sugerencia(event):
+    seleccion = listbox_sugerencias.curselection()
+    if seleccion:
+        entrada_busqueda.delete(0, tk.END)
+        entrada_busqueda.insert(0, listbox_sugerencias.get(seleccion))
+        listbox_sugerencias.place_forget()
+
+
 # Configuración de la ventana principal
-root = tk.Tk()
-root.title("Gestor de Paquetes Tkinter")
+root = CTk()
+root.title("Gestor de Paquetes pip")
 root.configure(bg=COLOR_FONDO)
 root.geometry(f"{root.winfo_screenwidth()}x{root.winfo_screenheight()}")
 
@@ -159,17 +193,17 @@ frame_derecho = ttk.Frame(notebook_principal, style="TFrame")
 notebook_principal.add(frame_derecho, text="Instalar/Desinstalar")
 
 # Etiquetas y entradas para el nombre del paquete
-etiqueta = ttk.Label(frame_derecho, text="Ingrese el nombre del paquete:", background=COLOR_FONDO, foreground=COLOR_TEXTO, font=FUENTE_TEXTO)
+etiqueta = tk.Label(frame_derecho, text="Ingrese el nombre del paquete:", background=COLOR_FONDO, foreground=COLOR_TEXTO, font=FUENTE_TEXTO)
 etiqueta.pack(pady=10)
-entrada_paquete = ttk.Entry(frame_derecho, font=FUENTE_TEXTO)
+entrada_paquete = CTkEntry(frame_derecho, font=FUENTE_TEXTO)
 entrada_paquete.pack(pady=5)
 
 # Crear botones para instalar, desinstalar y actualizar paquetes
-boton_instalar = ttk.Button(frame_derecho, text="Instalar", command=instalar_paquete)
+boton_instalar = CTkButton(frame_derecho, text="Instalar", command=instalar_paquete)
 boton_instalar.pack(pady=5)
-boton_desinstalar = ttk.Button(frame_derecho, text="Desinstalar", command=desinstalar_paquete)
+boton_desinstalar = CTkButton(frame_derecho, text="Desinstalar", command=desinstalar_paquete)
 boton_desinstalar.pack(pady=5)
-boton_actualizar = ttk.Button(frame_derecho, text="Actualizar", command=actualizar_paquete)
+boton_actualizar = CTkButton(frame_derecho, text="Actualizar", command=actualizar_paquete)
 boton_actualizar.pack(pady=5)
 
 # Pestaña para mostrar la lista de paquetes instalados
@@ -198,7 +232,7 @@ mis_paquetes_instalados = tk.Listbox(frame_mis_paquetes_instalados, bg=COLOR_FON
 mis_paquetes_instalados.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
 # Botón para exportar la lista de paquetes instalados
-boton_exportar = ttk.Button(frame_mis_paquetes_instalados, text="Exportar", command=exportar)
+boton_exportar = CTkButton(frame_mis_paquetes_instalados, text="Exportar", command=exportar)
 boton_exportar.pack(pady=10)
 
 # Pestaña para buscar paquetes en PyPI
@@ -206,18 +240,27 @@ frame_busqueda = ttk.Frame(notebook_principal, style="TFrame")
 notebook_principal.add(frame_busqueda, text="Buscar en PyPI")
 
 # Etiqueta y entrada para buscar en PyPI
-etiqueta_busqueda = ttk.Label(frame_busqueda, text="Buscar paquete en PyPI:", background=COLOR_FONDO, foreground=COLOR_TEXTO, font=FUENTE_TEXTO)
+etiqueta_busqueda = tk.Label(frame_busqueda, text="Buscar paquete en PyPI:", background=COLOR_FONDO, foreground=COLOR_TEXTO, font=FUENTE_TEXTO)
 etiqueta_busqueda.pack(pady=10)
-entrada_busqueda = ttk.Entry(frame_busqueda, font=FUENTE_TEXTO)
+entrada_busqueda = CTkEntry(frame_busqueda, font=FUENTE_TEXTO)
 entrada_busqueda.pack(pady=5)
-boton_buscar = ttk.Button(frame_busqueda, text="Buscar", command=buscar_paquetes)
+entrada_busqueda.bind('<KeyRelease>', actualizar_sugerencias)
+entrada_busqueda.bind('<FocusOut>', lambda e: listbox_sugerencias.place_forget())
+entrada_busqueda.bind('<FocusIn>', actualizar_sugerencias)
+
+# Listbox para mostrar sugerencias de búsqueda
+listbox_sugerencias = tk.Listbox(frame_busqueda, bg=COLOR_FONDO, fg=COLOR_TEXTO, font=FUENTE_TEXTO, selectbackground=COLOR_BOTONES)
+listbox_sugerencias.bind("<<ListboxSelect>>", completar_sugerencia)
+listbox_sugerencias.place_forget()
+
+# Botón para buscar en PyPI
+boton_buscar = CTkButton(frame_busqueda, text="Buscar", command=buscar_paquetes)
 boton_buscar.pack(pady=10)
 
 # Etiqueta para mostrar resultados de búsqueda
 resultado_busqueda = tk.StringVar()
-resultado_label = ttk.Label(frame_busqueda, textvariable=resultado_busqueda, background=COLOR_FONDO, foreground=COLOR_TEXTO, font=FUENTE_TEXTO, wraplength=400)
+resultado_label = tk.Label(frame_busqueda, textvariable=resultado_busqueda, background=COLOR_FONDO, foreground=COLOR_TEXTO, font=FUENTE_TEXTO, wraplength=400)
 resultado_label.pack(pady=10)
-
 
 # Lista de paquetes predeterminados
 paquetes_predeterminados = [
@@ -236,8 +279,18 @@ paquetes_predeterminados = [
     "spacy", "SQLAlchemy", "statsmodels", "sympy", "tabulate", "tbb", "tensorboard",
     "tensorflow", "termcolor", "tornado", "tqdm", "twisted", "typing-extensions",
     "urllib3", "virtualenv", "Werkzeug", "wordcloud", "wxPython", "xgboost",
-    "xlrd", "XlsxWriter", "xlwt", "yarl"
+    "xlrd", "XlsxWriter", "xlwt", "yarl", "bcrypt", "blinker", "bson", "cairocffi",
+    "cryptography", "cycler", "dataclasses-json", "docopt", "ecdsa", "email-validator",
+    "filelock", "gensim", "google-api-python-client", "greenlet", "httpx", "hyperopt",
+    "iso8601", "json5", "loguru", "matplotlib-venn", "mypy", "nltk", "openai", "orjson",
+    "passlib", "pillow", "pipenv", "poetry", "praw", "pybind11", "pydantic", "pygments",
+    "pyjwt", "pymongo", "pyparsing", "pyrsistent", "python-dateutil", "python-dotenv",
+    "pytube", "pyyaml", "regex", "rich", "scikit-optimize", "setuptools", "shap",
+    "six", "snorkel", "soundfile", "sqlparse", "starlette", "subprocess", "textblob",
+    "toml", "transformers", "twilio", "ujson", "uvicorn", "watchdog", "websockets",
+    "xlutils", "yfinance", "youtube-dl", "pyautogui"
 ]
+
 
 # Actualizar la lista de paquetes y mis paquetes al iniciar la aplicación
 actualizar_list_paquetes_instalados()
