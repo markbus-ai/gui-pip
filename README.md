@@ -42,6 +42,7 @@ cd gui-pip
 3. Instala las dependencias necesarias:
    ```
    pip install customtkinter
+   pip install requests
    ```
 
 ## Uso
