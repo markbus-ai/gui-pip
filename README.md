@@ -15,8 +15,11 @@ Este es un gestor de paquetes desarrollado en Python utilizando la biblioteca Tk
 - Tkinter (instalado por defecto en la mayoría de las distribuciones de Python)
 
 ## Uso
-
-1. Clona este repositorio en tu máquina local:
+0. instala dependencias:
+   ```bash
+   pip install customtkinter
+   ```
+2. Clona este repositorio en tu máquina local:
 
 ```bash
 git clone https://github.com/markbus-ai/gui-pip
